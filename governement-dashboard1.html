@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Government Dashboard - Resolve360</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+
+    <!-- Google Maps API -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCeeljp-TR5qDf4nQkQg0uXXsXdpNy2joQ&callback=initGoogleMaps"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1f2937;
+        }
+
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #1f2937;
+        }
+
+        .login-subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .login-input {
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .login-btn {
+            padding: 15px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            background: #2563eb;
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            padding: 15px 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 3px solid #1d4ed8;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .gov-seal {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #1e40af;
+            font-weight: bold;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo .subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .datetime-display {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1e40af;
+            font-size: 14px;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .user-name {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .user-role {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .test-sync-btn {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .test-sync-btn:hover {
+            background: rgba(16, 185, 129, 0.3);
+        }
+
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .main-content {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            opacity: 0.3;
+            color: white;
+        }
+
+        /* Total Reports - Purple */
+        .stat-total {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+        .stat-total::before {
+            background: #4f46e5;
+        }
+
+        /* Pending Reports - Orange */
+        .stat-pending {
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+        }
+        .stat-pending::before {
+            background: #ea580c;
+        }
+
+        /* In Progress - Blue */
+        .stat-progress {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+        .stat-progress::before {
+            background: #1d4ed8;
+        }
+
+        /* Resolved - Green */
+        .stat-resolved {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .stat-resolved::before {
+            background: #047857;
+        }
+
+        .filter-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .filter-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-header h3 i {
+            color: #3b82f6;
+        }
+
+        /* Department Structure Styles */
+        .department-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .department-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .department-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            font-weight: 600;
+            color: #1f2937;
+            position: relative;
+            padding-left: 35px;
+        }
+
+        .department-header i {
+            margin-right: 8px;
+            color: #3b82f6;
+        }
+
+        .sub-departments {
+            padding: 8px 0;
+            background: #fafbfc;
+        }
+
+        .sub-dept {
+            padding: 8px 15px 8px 50px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .sub-dept:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        /* Priority Buttons */
+        .priority-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .priority-btn {
+            padding: 8px 12px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .priority-btn.critical {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .priority-btn.critical.active {
+            background: #dc2626;
+            color: white;
+        }
+
+        .priority-btn.high {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .priority-btn.high.active {
+            background: #d97706;
+            color: white;
+        }
+
+        .priority-btn.medium {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .priority-btn.medium.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .priority-btn.low {
+            background: rgba(107, 114, 128, 0.1);
+            color: #4b5563;
+            border-color: rgba(107, 114, 128, 0.2);
+        }
+
+        .priority-btn.low.active {
+            background: #4b5563;
+            color: white;
+        }
+
+        .priority-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-item i {
+            margin-right: 8px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .clear-filters-btn {
+            padding: 6px 12px;
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .clear-filters-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+        }
+
+        .filter-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .filter-input,
+        .filter-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: #374151;
+            position: relative;
+            padding-left: 28px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            left: 0;
+            height: 18px;
+            width: 18px;
+            background-color: #fff;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-item:hover input ~ .checkmark {
+            border-color: #3b82f6;
+        }
+
+        .checkbox-item input:checked ~ .checkmark {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .checkbox-item input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .checkbox-item .checkmark:after {
+            left: 5px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .date-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .date-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .dashboard-layout {
+            display: flex;
+            gap: 30px;
+            min-height: calc(100vh - 200px);
+        }
+
+        .left-column {
+            flex: 0 0 40%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            position: sticky;
+            top: 120px;
+            height: fit-content;
+        }
+
+        .right-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .map-section {
+            height: 500px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .map-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .reports-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .reports-list {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .reports-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reports-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .reports-count {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .reports-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .report-item {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .report-item:hover {
+            background: #f8fafc;
+        }
+
+        .report-item.selected {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .report-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .report-category {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .category-infrastructure {
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+        }
+
+        .category-safety {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .category-environment {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .category-transport {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .status-progress {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .status-resolved {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .report-description {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .report-location {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+
+
+
+
+        .no-selection {
+            text-align: center;
+            color: #6b7280;
+            padding: 40px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            font-weight: 600;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .report-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 5px;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-section {
+            margin-bottom: 20px;
+        }
+
+        .modal-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .modal-value {
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .modal-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .modal-photo {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .report-item.highlighted {
+            background: #fef3c7 !important;
+            border-left: 4px solid #f59e0b !important;
+            animation: highlight 0.5s ease;
+        }
+
+        @keyframes highlight {
+            0% { background: #fbbf24; }
+            100% { background: #fef3c7; }
+        }
+
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px;
+            text-align: center;
+        }
+
+        .error-message i {
+            margin-right: 8px;
+        }
+
+        fieldset {
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        legend {
+            padding: 0;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-layout {
+                flex-direction: column;
+            }
+
+            .left-column {
+                flex: none;
+                position: static;
+            }
+
+            .map-section {
+                height: 300px;
+            }
+
+            .filter-panel {
+                padding: 15px;
+            }
+
+            .date-inputs {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-card">
+            <div class="login-title">
+                <i class="fas fa-shield-alt"></i>
+                Government Dashboard
+            </div>
+            <div class="login-subtitle">Secure Access Required</div>
+            <form class="login-form" id="loginForm">
+                <input type="email" id="email" class="login-input" placeholder="Government Email" required>
+                <input type="password" id="password" class="login-input" placeholder="Password" required>
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Secure Login
+                </button>
+            </form>
+            <div style="margin-top: 20px; font-size: 12px; color: #6b7280;">
+                Demo: admin@gov.local / password123
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="gov-seal">
+                    🏛️
+                </div>
+                <div class="logo">
+                    <h1>Resolve360 Dashboard</h1>
+                    <div class="subtitle">Government of India • Smart Cities Mission</div>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <div class="datetime-display" id="currentDateTime">
+                    <i class="fas fa-clock"></i>
+                    <span id="dateTimeText">Loading...</span>
+                </div>
+                <div class="status-indicator" id="connectionStatus">
+                    <i class="fas fa-circle"></i>
+                    <span>Live Sync Active</span>
+                </div>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-profile" onclick="toggleUserMenu()">
+                    <div class="user-avatar" id="userAvatar">GA</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Government Admin</div>
+                        <div class="user-role">Municipal Officer</div>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: rgba(255,255,255,0.7); font-size: 12px;"></i>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="action-btn test-sync-btn" onclick="testSync()">
+                        <i class="fas fa-mobile-alt"></i> Test Sync
+                    </button>
+                    <button class="action-btn logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card stat-total">
+                    <i class="fas fa-chart-bar stat-icon"></i>
+                    <div class="stat-number" id="totalReports">0</div>
+                    <div class="stat-label">Total Reports</div>
+                </div>
+                <div class="stat-card stat-pending">
+                    <i class="fas fa-clock stat-icon"></i>
+                    <div class="stat-number" id="pendingReports">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card stat-progress">
+                    <i class="fas fa-cog stat-icon"></i>
+                    <div class="stat-number" id="progressReports">0</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+                <div class="stat-card stat-resolved">
+                    <i class="fas fa-check-circle stat-icon"></i>
+                    <div class="stat-number" id="resolvedReports">0</div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+            </div>
+
+
+
+            <!-- Dashboard Layout -->
+            <div class="dashboard-layout">
+                <!-- Left Column - Interactive Map -->
+                <div class="left-column">
+                    <div class="map-title">
+                        <i class="fas fa-map-marked-alt"></i> Interactive Report Map
+                    </div>
+                    <div class="map-section">
+                        <div id="mainMap" style="width: 100%; height: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Filters and Reports -->
+                <div class="right-column">
+                    <!-- Department Filter Panel -->
+                    <div class="filter-panel">
+                        <div class="filter-header">
+                            <h3><i class="fas fa-building"></i> Department Routing</h3>
+                            <button class="clear-filters-btn" onclick="clearAllFilters()">Show All</button>
+                        </div>
+                        
+                        <div class="filter-section">
+                            <label class="filter-label" for="searchInput">Search Reports</label>
+                            <input type="text" id="searchInput" class="filter-input" placeholder="Search by title, location, or ID...">
+                        </div>
+
+                        <div class="filter-section">
+                            <fieldset>
+                                <legend class="filter-label"><i class="fas fa-sitemap"></i> Government Departments</legend>
+                                <div class="department-group">
+                                    <div class="department-section">
+                                        <label class="department-header">
+                                            <input type="checkbox" id="dept-public-works" value="public-works" checked>
+                                            <span class="checkmark"></span>
+                                            <i class="fas fa-hammer"></i> Public Works Department
+                                        </label>
+                                        <div class="sub-departments">
+                                            <label class="checkbox-item sub-dept">
+                                                <input type="checkbox" id="sub-roads" value="infrastructure" checked>
+                                                <span class="checkmark"></span>
+                                                Roads & Infrastructure
+                                            </label>
+                                            <label class="checkbox-item sub-dept">
+                                                <input type="checkbox" id="sub-water" value="water" checked>
+                                                <span class="checkmark"></span>
+                                                Water Supply
+                                            </label>
+                                            <label class="checkbox-item sub-dept">
+                                                <input type="checkbox" id="sub-drainage" value="drainage" checked>
+                                                <span class="checkmark"></span>
+                                                Drainage Systems
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="department-section">
+                                        <label class="department-header">
+                                            <input type="checkbox" id="dept-environment" value="environment" checked>
+                                            <span class="checkmark"></span>
+                                            <i class="fas fa-leaf"></i> Environment Department
+                                        </label>
+                                        <div class="sub-departments">
+                                            <label class="checkbox-item sub-dept">
+                                                <input type="checkbox" id="sub-waste" value="environment" checked>
+                                                <span class="checkmark"></span>
+                                                Waste Management
+                                            </label>
+                                            <label class="checkbox-item sub-dept">
+                                                <input type="checkbox" id="sub-pollution" value="pollution" checked>
+                                                <span class="checkmark"></span>
+                                                Pollution Control
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="department-section">
+                                        <label class="department-header">
+                                            <input type="checkbox" id="dept-safety" value="safety" checked>
+                                            <span class="checkmark"></span>
+                                            <i class="fas fa-shield-alt"></i> Public Safety
+                                        </label>
+                                        <div class="sub-departments">
+                                            <label class="checkbox-item sub-dept">
+                                                <input type="checkbox" id="sub-lighting" value="safety" checked>
+                                                <span class="checkmark"></span>
+                                                Street Lighting
+                                            </label>
+                                            <label class="checkbox-item sub-dept">
+                                                <input type="checkbox" id="sub-traffic" value="transport" checked>
+                                                <span class="checkmark"></span>
+                                                Traffic Management
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div class="filter-section">
+                            <fieldset>
+                                <legend class="filter-label"><i class="fas fa-flag"></i> Priority Level</legend>
+                                <div class="priority-buttons">
+                                    <button class="priority-btn critical active" data-priority="critical">
+                                        <i class="fas fa-exclamation-triangle"></i> Critical
+                                    </button>
+                                    <button class="priority-btn high active" data-priority="high">
+                                        <i class="fas fa-arrow-up"></i> High
+                                    </button>
+                                    <button class="priority-btn medium active" data-priority="medium">
+                                        <i class="fas fa-minus"></i> Medium
+                                    </button>
+                                    <button class="priority-btn low active" data-priority="low">
+                                        <i class="fas fa-arrow-down"></i> Low
+                                    </button>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div class="filter-section">
+                            <fieldset>
+                                <legend class="filter-label"><i class="fas fa-tasks"></i> Assignment Status</legend>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="status-unassigned" value="pending" checked>
+                                        <span class="checkmark"></span>
+                                        <i class="fas fa-clock"></i> Unassigned
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="status-assigned" value="progress" checked>
+                                        <span class="checkmark"></span>
+                                        <i class="fas fa-user-check"></i> Assigned
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="status-completed" value="resolved" checked>
+                                        <span class="checkmark"></span>
+                                        <i class="fas fa-check-circle"></i> Completed
+                                    </label>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div class="filter-section">
+                            <label class="filter-label"><i class="fas fa-sort"></i> Sort Reports</label>
+                            <select id="sortBy" class="filter-select">
+                                <option value="priority">Priority First</option>
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="location">By Location</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Reports Section -->
+                    <div class="reports-section">
+                        <!-- Reports List -->
+                        <div class="reports-list">
+                            <div class="reports-header">
+                                <div class="reports-title">Reports</div>
+                                <div class="reports-count" id="reportsCount">0 reports</div>
+                            </div>
+                            <div class="reports-container" id="reportsContainer">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                    <span>Loading reports...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-bell"></i>
+        <span id="notificationText">Notification</span>
+    </div>
+
+    <!-- Report Modal -->
+    <div class="report-modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Report Details</h3>
+                <button class="modal-close" onclick="closeModal()" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <label class="modal-label">Title</label>
+                    <div class="modal-value" id="modalReportTitle"></div>
+                </div>
+                <div class="modal-section">
+                    <label class="modal-label">Description</label>
+                    <div class="modal-value" id="modalReportDescription"></div>
+                </div>
+                <div class="modal-section">
+                    <label class="modal-label">Category</label>
+                    <div class="modal-value" id="modalReportCategory"></div>
+                </div>
+                <div class="modal-section">
+                    <label class="modal-label">Status</label>
+                    <div class="modal-value" id="modalReportStatus"></div>
+                </div>
+                <div class="modal-section">
+                    <label class="modal-label">Location</label>
+                    <div class="modal-value" id="modalReportLocation"></div>
+                </div>
+                <div class="modal-section" id="modalPhotosSection" style="display: none;">
+                    <label class="modal-label">Photos</label>
+                    <div class="modal-photos" id="modalPhotos"></div>
+                </div>
+                <div class="modal-section">
+                    <label class="modal-label">Submitted</label>
+                    <div class="modal-value" id="modalReportDate"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="realtime-sync.js"></script>
+    <script>
+        // Global variables
+        let currentUser = null;
+        let allReports = [];
+        let filteredReports = [];
+        let selectedReport = null;
+        let reportsListener = null;
+        let map = null;
+        let marker = null;
+
+        // Government credentials (in production, use proper authentication)
+        const govCredentials = {
+            'admin@gov.local': 'password123',
+            'official@city.gov': 'secure456',
+            'manager@municipal.gov': 'admin789'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            setupEventListeners();
+            initializeHeader();
+            startClock();
+        });
+        
+        // Initialize header functionality
+        function initializeHeader() {
+            updateDateTime();
+            // Update user info based on login
+            const userEmail = localStorage.getItem('currentUserEmail') || 'admin@gov.local';
+            updateUserProfile(userEmail);
+        }
+        
+        // Start real-time clock
+        function startClock() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        }
+        
+        // Update date and time display
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+            
+            const dateTimeText = now.toLocaleDateString('en-IN', options);
+            const element = document.getElementById('dateTimeText');
+            if (element) {
+                element.textContent = dateTimeText;
+            }
+        }
+        
+        // Update user profile information
+        function updateUserProfile(email) {
+            const userProfiles = {
+                'admin@gov.local': {
+                    name: 'Government Admin',
+                    role: 'Municipal Officer',
+                    avatar: 'GA',
+                    department: 'Administration'
+                },
+                'official@city.gov': {
+                    name: 'City Official',
+                    role: 'Public Works',
+                    avatar: 'CO',
+                    department: 'Infrastructure'
+                },
+                'manager@municipal.gov': {
+                    name: 'Municipal Manager',
+                    role: 'Department Head',
+                    avatar: 'MM',
+                    department: 'Management'
+                }
+            };
+            
+            const profile = userProfiles[email] || userProfiles['admin@gov.local'];
+            
+            document.getElementById('userName').textContent = profile.name;
+            document.getElementById('userAvatar').textContent = profile.avatar;
+            document.querySelector('.user-role').textContent = profile.role;
+        }
+        
+        // Toggle user menu (placeholder for future dropdown)
+        function toggleUserMenu() {
+            showNotification('User profile menu - Coming soon!');
+        }
+        
+        // Toggle priority filter buttons
+        function togglePriorityFilter(event) {
+            const btn = event.target.closest('.priority-btn');
+            btn.classList.toggle('active');
+            applyFilters();
+        }
+        
+        // Toggle department sections
+        function toggleDepartment(event) {
+            const header = event.target.closest('.department-header');
+            const checkbox = header.querySelector('input[type="checkbox"]');
+            const subDepts = header.parentElement.querySelectorAll('.sub-dept input[type="checkbox"]');
+            
+            // Toggle all sub-departments
+            subDepts.forEach(subCheckbox => {
+                subCheckbox.checked = checkbox.checked;
+            });
+            
+            applyFilters();
+        }
+        
+        // Get selected departments
+        function getSelectedDepartments() {
+            const selected = [];
+            document.querySelectorAll('.sub-dept input[type="checkbox"]:checked').forEach(cb => {
+                selected.push(cb.value);
+            });
+            return selected;
+        }
+        
+        // Get selected priorities
+        function getSelectedPriorities() {
+            const selected = [];
+            document.querySelectorAll('.priority-btn.active').forEach(btn => {
+                selected.push(btn.dataset.priority);
+            });
+            return selected;
+        }
+        
+        // Assign report to department
+        function assignToDepartment(reportId) {
+            const departmentSelect = document.getElementById('assignDepartment');
+            const selectedDept = departmentSelect.value;
+            
+            if (!selectedDept) {
+                showNotification('⚠️ Please select a department first');
+                return;
+            }
+            
+            const deptNames = {
+                'public-works': 'Public Works Department',
+                'environment': 'Environment Department', 
+                'safety': 'Public Safety Department',
+                'transport': 'Transport Department'
+            };
+            
+            // Update report status to assigned
+            const reportIndex = allReports.findIndex(r => r.id === reportId);
+            if (reportIndex !== -1) {
+                allReports[reportIndex].status = 'progress';
+                allReports[reportIndex].assignedDepartment = selectedDept;
+                allReports[reportIndex].assignedAt = new Date().toISOString();
+                
+                // Update localStorage
+                localStorage.setItem('demoReports', JSON.stringify(allReports));
+                
+                // Refresh display
+                applyFilters();
+                updateStats();
+                
+                // Close modal and show success
+                closeModal();
+                showNotification(`✅ Report assigned to ${deptNames[selectedDept]}`);
+            }
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Login form
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+            // Search and filters
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            document.getElementById('sortBy').addEventListener('change', applyFilters);
+            document.getElementById('startDate').addEventListener('change', applyFilters);
+            document.getElementById('endDate').addEventListener('change', applyFilters);
+
+            // Checkbox filters
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', applyFilters);
+            });
+            
+            // Priority button filters
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                btn.addEventListener('click', togglePriorityFilter);
+            });
+            
+            // Department header toggles
+            document.querySelectorAll('.department-header').forEach(header => {
+                header.addEventListener('click', toggleDepartment);
+            });
+        }
+
+        // Authentication
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+            loginBtn.disabled = true;
+
+            // Simulate authentication delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            if (govCredentials[email] && govCredentials[email] === password) {
+                currentUser = { email: email };
+                localStorage.setItem('currentUserEmail', email);
+                updateUserProfile(email);
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+
+                showNotification('Login successful! Welcome to the dashboard.');
+                
+                // Force load reports immediately after login
+                setTimeout(() => {
+                    console.log('🔄 Post-login: Loading reports...');
+                    loadReportsFromStorage();
+                    startRealtimeListener();
+                }, 200);
+            } else {
+                showNotification('Invalid credentials. Access denied.');
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Secure Login';
+                loginBtn.disabled = false;
+            }
+        }
+
+        function logout() {
+            if (reportsListener) {
+                reportsListener();
+            }
+            currentUser = null;
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+            showNotification('Logged out successfully.');
+        }
+
+        // Real-time data listener
+        function startRealtimeListener() {
+            console.log('🔄 Starting dashboard...');
+            
+            // Show immediate loading feedback
+            showNotification('🚀 Loading dashboard data...');
+            
+            // Load data immediately (no delay)
+            loadReportsFromStorage();
+            
+            // Initialize map quickly
+            if (typeof google !== 'undefined' && google.maps) {
+                initMainMap();
+                showNotification('🗺️ Map loaded successfully!');
+            } else {
+                // Show map loading status
+                showNotification('🗺️ Loading interactive map...');
+                
+                // Quick retry for map
+                const mapRetry = setInterval(() => {
+                    if (typeof google !== 'undefined' && google.maps && !mainMap) {
+                        initMainMap();
+                        showNotification('✅ Dashboard ready!');
+                        clearInterval(mapRetry);
+                    }
+                }, 500);
+                
+                // Stop trying after 10 seconds
+                setTimeout(() => {
+                    clearInterval(mapRetry);
+                    if (!mainMap) {
+                        showNotification('⚠️ Map loading slowly - reports still work!');
+                    }
+                }, 10000);
+            }
+            
+            // Initialize real-time sync
+            if (window.realtimeSync) {
+                console.log('✅ Real-time sync activated');
+                showNotification('🔄 Live sync enabled');
+            } else {
+                console.log('📊 Demo mode active');
+            }
+        }
+        
+        // Update connection indicator
+        function updateConnectionIndicator(status) {
+            const indicator = document.getElementById('connectionStatus');
+            if (indicator) {
+                const statusConfig = {
+                    connected: { text: 'Live Sync Active', color: '#10b981', icon: 'fas fa-sync-alt' },
+                    disconnected: { text: 'Sync Offline', color: '#ef4444', icon: 'fas fa-exclamation-triangle' },
+                    reconnecting: { text: 'Reconnecting...', color: '#f59e0b', icon: 'fas fa-spinner fa-spin' }
+                };
+                
+                const config = statusConfig[status] || statusConfig.connected;
+                indicator.innerHTML = `<i class="${config.icon}"></i> <span>${config.text}</span>`;
+                indicator.style.color = config.color;
+                indicator.style.background = `${config.color}20`;
+            }
+        }
+
+        function loadReportsFromStorage() {
+            console.log('🔄 Loading reports from storage...');
+            
+            const stored = localStorage.getItem('demoReports') || localStorage.getItem('civicReports');
+            
+            if (stored) {
+                try {
+                    const reports = JSON.parse(stored);
+                    console.log(`📊 Found ${reports.length} stored reports`);
+                    
+                    coordinatesArray = [{ "lat": 20.8705612, "lng": 74.7660728 }, { "lat": 20.8953566, "lng": 74.7294362 }, {
+                        "lat": 20.9120663,
+                        "lng": 74.7775639
+                    }]
+                    
+                    allReports = reports.map(report => ({
+                        ...report,
+                        timestamp: report.timestamp || report.createdAt,
+                        coordinates: report.coordinates || coordinatesArray[Math.floor(Math.random() * coordinatesArray.length)],
+                        priority: report.priority || 'medium'
+                    }));
+                } catch (error) {
+                    console.error('❌ Error parsing stored reports:', error);
+                    loadDemoData();
+                }
+            } else {
+                console.log('🆕 No stored reports found, loading demo data...');
+                loadDemoData();
+            }
+
+            console.log(`✅ Successfully loaded ${allReports.length} reports`);
+            
+            // Force update UI
+            setTimeout(() => {
+                applyFilters();
+                updateStats();
+                
+                // Ensure reports display
+                if (allReports.length > 0) {
+                    console.log('📊 Forcing reports display...');
+                    displayReports();
+                }
+                
+                // Update map if available
+                if (mainMap && allReports.length > 0) {
+                    updateMapMarkers(allReports);
+                }
+            }, 100);
+        }
+        
+        // Load comprehensive demo data for testing
+        function loadDemoData() {
+            const demoReports = [
+                // Infrastructure Department Reports
+                {
+                    id: 'demo_001',
+                    title: 'Major Water Pipe Burst',
+                    description: 'Critical water main break causing severe flooding on highway. Immediate attention required.',
+                    category: 'infrastructure',
+                    priority: 'critical',
+                    status: 'pending',
+                    location: 'Highway Junction, Industrial Area',
+                    coordinates: { lat: 20.8705612, lng: 74.7660728 },
+                    user: { name: 'Traffic Police', email: 'traffic@gov.in' },
+                    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'demo_002',
+                    title: 'Large Pothole on Main Street',
+                    description: 'Deep pothole causing vehicle damage and traffic congestion near city center.',
+                    category: 'infrastructure',
+                    priority: 'high',
+                    status: 'pending',
+                    location: 'Main Street, City Center',
+                    coordinates: { lat: 20.8953566, lng: 74.7294362 },
+                    user: { name: 'Pratik Gadhe', email: 'pratik@example.com' },
+                    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'demo_003',
+                    title: 'Drainage System Blocked',
+                    description: 'Storm drain completely blocked causing water logging during rains.',
+                    category: 'infrastructure',
+                    priority: 'medium',
+                    status: 'progress',
+                    location: 'Residential Colony, Sector 5',
+                    coordinates: { lat: 20.9120663, lng: 74.7775639 },
+                    user: { name: 'Colony Resident', email: 'resident@example.com' },
+                    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+                },
+                
+                // Environment Department Reports
+                {
+                    id: 'demo_004',
+                    title: 'Garbage Collection Missed',
+                    description: 'Waste not collected for 3 days, creating hygiene issues and bad odor.',
+                    category: 'environment',
+                    priority: 'high',
+                    status: 'pending',
+                    location: 'Green Valley Society, Block A',
+                    coordinates: { lat: 20.8705612, lng: 74.7660728 },
+                    user: { name: 'Society Secretary', email: 'secretary@greenvalley.com' },
+                    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'demo_005',
+                    title: 'Illegal Dumping Site',
+                    description: 'Construction waste being dumped illegally in public area, environmental hazard.',
+                    category: 'environment',
+                    priority: 'medium',
+                    status: 'pending',
+                    location: 'Behind Market Complex',
+                    coordinates: { lat: 20.8953566, lng: 74.7294362 },
+                    user: { name: 'Environmental Activist', email: 'activist@environment.org' },
+                    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'demo_006',
+                    title: 'Air Pollution from Factory',
+                    description: 'Industrial unit releasing excessive smoke, violating pollution norms.',
+                    category: 'environment',
+                    priority: 'high',
+                    status: 'progress',
+                    location: 'Industrial Estate, Zone 2',
+                    coordinates: { lat: 20.9120663, lng: 74.7775639 },
+                    user: { name: 'Local Resident', email: 'concerned@citizen.com' },
+                    timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString()
+                },
+                
+                // Public Safety Department Reports
+                {
+                    id: 'demo_007',
+                    title: 'Street Light Not Working',
+                    description: 'Multiple street lights out for a week, creating safety concerns at night.',
+                    category: 'safety',
+                    priority: 'medium',
+                    status: 'pending',
+                    location: 'Park Avenue, Near School',
+                    coordinates: { lat: 20.8705612, lng: 74.7660728 },
+                    user: { name: 'School Principal', email: 'principal@school.edu' },
+                    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'demo_008',
+                    title: 'Traffic Signal Malfunction',
+                    description: 'Traffic light stuck on red, causing major traffic jam during peak hours.',
+                    category: 'transport',
+                    priority: 'critical',
+                    status: 'progress',
+                    location: 'Central Square, Main Intersection',
+                    coordinates: { lat: 20.8953566, lng: 74.7294362 },
+                    user: { name: 'Traffic Constable', email: 'traffic@police.gov' },
+                    timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'demo_009',
+                    title: 'Broken Footpath',
+                    description: 'Damaged sidewalk creating tripping hazard for pedestrians, especially elderly.',
+                    category: 'safety',
+                    priority: 'medium',
+                    status: 'resolved',
+                    location: 'Shopping District, Main Road',
+                    coordinates: { lat: 20.9120663, lng: 74.7775639 },
+                    user: { name: 'Senior Citizen', email: 'senior@community.org' },
+                    timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
+                },
+                
+                // Additional Mixed Reports
+                {
+                    id: 'demo_010',
+                    title: 'Park Maintenance Required',
+                    description: 'Public park equipment damaged, grass overgrown, needs immediate maintenance.',
+                    category: 'environment',
+                    priority: 'low',
+                    status: 'pending',
+                    location: 'Children Park, Sector 3',
+                    coordinates: { lat: 20.8705612, lng: 74.7660728 },
+                    user: { name: 'Parent Committee', email: 'parents@community.org' },
+                    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+                    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+                }
+            ];
+            
+            allReports = demoReports;
+            localStorage.setItem('demoReports', JSON.stringify(demoReports));
+            console.log('✅ Demo data created:', demoReports.length, 'reports across all departments');
+            
+            // Immediately display the demo reports
+            setTimeout(() => {
+                console.log('🔄 Triggering initial display...');
+                applyFilters();
+                updateStats();
+            }, 100);
+        }
+
+        // Generate random coordinates for demo
+        function generateRandomCoordinates() {
+            return {
+                lat: 40.7128 + (Math.random() - 0.5) * 0.1, // NYC area
+                lng: -74.0060 + (Math.random() - 0.5) * 0.1
+            };
+        }
+
+        // Filter and search
+        async function applyFilters() {
+            showLoadingSpinner();
+            
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sortBy = document.getElementById('sortBy').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            // Get selected departments
+            const selectedDepartments = getSelectedDepartments();
+
+            // Get selected priorities
+            const selectedPriorities = getSelectedPriorities();
+            
+            // Get selected statuses
+            const selectedStatuses = Array.from(document.querySelectorAll('input[id^="status-"]:checked'))
+                .map(cb => cb.value);
+
+            // Build filter params
+            const filters = {
+                search: searchTerm,
+                types: selectedTypes,
+                statuses: selectedStatuses,
+                startDate,
+                endDate,
+                sortBy
+            };
+
+            console.log(`🔍 Filtering ${allReports ? allReports.length : 0} reports...`);
+            
+            if (!allReports || allReports.length === 0) {
+                console.log('⚠️ No reports to filter');
+                filteredReports = [];
+                hideLoadingSpinner();
+                displayReports();
+                return;
+            }
+            
+            // Use local filtering
+            filteredReports = allReports.filter(report => {
+                const matchesSearch = !searchTerm ||
+                    report.title.toLowerCase().includes(searchTerm) ||
+                    report.description.toLowerCase().includes(searchTerm) ||
+                    report.location.toLowerCase().includes(searchTerm);
+
+                const matchesDepartment = selectedDepartments.length === 0 || selectedDepartments.includes(report.category);
+                const matchesPriority = selectedPriorities.length === 0 || selectedPriorities.includes(report.priority || 'medium');
+                const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(report.status);
+
+                let matchesDateRange = true;
+                if (startDate || endDate) {
+                    const reportDate = new Date(report.timestamp || report.createdAt);
+                    if (startDate) {
+                        matchesDateRange = matchesDateRange && reportDate >= new Date(startDate);
+                    }
+                    if (endDate) {
+                        matchesDateRange = matchesDateRange && reportDate <= new Date(endDate + 'T23:59:59');
+                    }
+                }
+
+                return matchesSearch && matchesDepartment && matchesPriority && matchesStatus && matchesDateRange;
+            });
+            
+            // Sort filtered reports
+            filteredReports.sort((a, b) => {
+                switch (sortBy) {
+                    case 'priority':
+                        const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+                        return (priorityOrder[b.priority] || 2) - (priorityOrder[a.priority] || 2);
+                    case 'newest':
+                        return new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt);
+                    case 'oldest':
+                        return new Date(a.timestamp || a.createdAt) - new Date(b.timestamp || b.createdAt);
+                    case 'location':
+                        return (a.location || '').localeCompare(b.location || '');
+                    default:
+                        return 0;
+                }
+            });
+
+            hideLoadingSpinner();
+            displayReports();
+            
+            // Update map markers immediately
+            if (mainMap && filteredReports) {
+                updateMapMarkers(filteredReports);
+                console.log(`🗺️ Map updated with ${filteredReports.length} filtered reports`);
+            }
+        }
+
+        // Clear all filters
+        function clearAllFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('sortBy').value = 'priority';
+            
+            // Check all checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = true;
+            });
+            
+            // Activate all priority buttons
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                btn.classList.add('active');
+            });
+            
+            applyFilters();
+        }
+
+        // Display reports
+        function displayReports() {
+            console.log(`📊 Displaying ${filteredReports ? filteredReports.length : 0} reports`);
+            
+            const container = document.getElementById('reportsContainer');
+            const count = document.getElementById('reportsCount');
+            
+            if (!container) {
+                console.error('❌ Reports container not found!');
+                return;
+            }
+            
+            if (!filteredReports || filteredReports.length === 0) {
+                console.log('⚠️ No filtered reports to display');
+                count.textContent = '0 reports';
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #6b7280;">
+                        <i class="fas fa-search" style="font-size: 48px; color: #d1d5db; margin-bottom: 15px;"></i>
+                        <p>No reports found matching your criteria</p>
+                        <p style="font-size: 14px; margin-top: 10px;">Total reports available: ${allReports ? allReports.length : 0}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            count.textContent = `${filteredReports.length} report${filteredReports.length !== 1 ? 's' : ''}`;
+
+            const reportsHTML = filteredReports.map(report => {
+                const date = new Date(report.timestamp || report.createdAt).toLocaleDateString();
+                const time = new Date(report.timestamp || report.createdAt).toLocaleTimeString();
+
+                const priorityIcon = {
+                    critical: '<i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>',
+                    high: '<i class="fas fa-arrow-up" style="color: #d97706;"></i>',
+                    medium: '<i class="fas fa-minus" style="color: #2563eb;"></i>',
+                    low: '<i class="fas fa-arrow-down" style="color: #4b5563;"></i>'
+                };
+                
+                return `
+                    <div class="report-item ${selectedReport?.id === report.id ? 'selected' : ''}" 
+                         onclick="selectReportAndShowDetails('${report.id}')">
+                        <div class="report-header">
+                            <div>
+                                <div class="report-title">
+                                    ${priorityIcon[report.priority] || ''}
+                                    ${report.title}
+                                </div>
+                                <span class="report-category category-${report.category}">
+                                    ${report.category.toUpperCase()}
+                                </span>
+                            </div>
+                            <span class="status-badge status-${report.status}">
+                                ${report.status.toUpperCase()}
+                            </span>
+                        </div>
+                        <div class="report-description">${report.description}</div>
+                        <div class="report-meta">
+                            <div class="report-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${report.location}
+                            </div>
+                            <div class="report-time">
+                                <i class="fas fa-clock"></i>
+                                ${date} ${time}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = reportsHTML;
+            console.log('✅ Reports displayed successfully');
+        }
+
+        // Select report
+        function selectReport(reportId) {
+            selectedReport = allReports.find(r => r.id === reportId);
+
+            if (selectedReport) {
+                document.getElementById('noSelection').style.display = 'none';
+                document.getElementById('detailsContent').classList.add('active');
+
+                // Populate details
+                document.getElementById('detailTitle').textContent = selectedReport.title;
+                document.getElementById('detailDescription').textContent = selectedReport.description;
+                document.getElementById('detailCategory').innerHTML = `
+                    <span class="report-category category-${selectedReport.category}">
+                        ${selectedReport.category}
+                    </span>
+                `;
+                document.getElementById('detailLocation').textContent = selectedReport.location;
+                document.getElementById('detailUser').textContent = selectedReport.user?.name || 'Anonymous User';
+                document.getElementById('detailTimestamp').textContent =
+                    new Date(selectedReport.timestamp || selectedReport.createdAt).toLocaleString();
+                document.getElementById('statusSelect').value = selectedReport.status;
+
+                // Update map
+                updateMap(selectedReport.coordinates || { lat: 40.7128, lng: -74.0060 });
+
+                // Update selected state in list
+                document.querySelectorAll('.report-item').forEach(item => item.classList.remove('selected'));
+                event.target.closest('.report-item').classList.add('selected');
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('totalReports').textContent = allReports.length;
+            document.getElementById('pendingReports').textContent =
+                allReports.filter(r => r.status === 'pending').length;
+            document.getElementById('progressReports').textContent =
+                allReports.filter(r => r.status === 'progress').length;
+            document.getElementById('resolvedReports').textContent =
+                allReports.filter(r => r.status === 'resolved').length;
+        }
+
+        // Update report status with real-time sync
+        async function updateReportStatus() {
+            if (!selectedReport) return;
+
+            const newStatus = document.getElementById('statusSelect').value;
+            const updateBtn = document.querySelector('.update-btn');
+
+            updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            updateBtn.disabled = true;
+
+            try {
+                // Use real-time sync if available
+                if (window.realtimeSync) {
+                    await window.realtimeSync.updateReportStatus(selectedReport.id, newStatus);
+                } else {
+                    // Fallback to localStorage
+                    const reports = JSON.parse(localStorage.getItem('civicReports') || localStorage.getItem('demoReports') || '[]');
+                    const reportIndex = reports.findIndex(r => r.id === selectedReport.id);
+
+                    if (reportIndex !== -1) {
+                        reports[reportIndex].status = newStatus;
+                        reports[reportIndex].lastUpdated = new Date().toISOString();
+                        localStorage.setItem('civicReports', JSON.stringify(reports));
+                        
+                        // Trigger storage event for real-time updates
+                        window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'civicReports',
+                            newValue: JSON.stringify(reports)
+                        }));
+                    }
+                }
+
+                selectedReport.status = newStatus;
+                showNotification(`✅ Status updated to: ${newStatus.toUpperCase()} - Synced in real-time`);
+
+                // Refresh display
+                loadReportsFromStorage();
+                
+                // Update the selected report display
+                document.querySelector(`[onclick="selectReport('${selectedReport.id}')"]`)?.classList.add('selected');
+                
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showNotification('❌ Failed to update status - Will retry automatically');
+            } finally {
+                updateBtn.innerHTML = '<i class="fas fa-save"></i> Update Status';
+                updateBtn.disabled = false;
+            }
+        }
+
+        // Google Maps initialization callback
+        function initGoogleMaps() {
+            console.log('🗺️ Google Maps API loaded');
+            setTimeout(() => {
+                initMainMap();
+            }, 500);
+        }
+
+        // ...existing code...
+
+        // Main map for left column
+        let mainMap = null;
+        let mainMapMarkers = [];
+        
+        function initMainMap() {
+            const mapElement = document.getElementById('mainMap');
+            if (!mapElement) {
+                console.error('❌ Map element not found');
+                return;
+            }
+            
+            try {
+                // Remove loading spinner from map
+                hideLoadingSpinner();
+                
+                mainMap = new google.maps.Map(mapElement, {
+                    center: { lat: 20.5937, lng: 78.9629 },
+                    zoom: 6,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP,
+                    // Faster loading options
+                    gestureHandling: 'cooperative',
+                    zoomControl: true,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: true
+                });
+                
+                console.log('✅ Map ready!');
+                
+                // Update markers immediately if data exists
+                if (allReports && allReports.length > 0) {
+                    updateMainMapMarkers();
+                } else {
+                    // Wait for data and try again
+                    setTimeout(() => {
+                        if (allReports && allReports.length > 0) {
+                            updateMainMapMarkers();
+                        }
+                    }, 500);
+                }
+                
+            } catch (error) {
+                console.error('❌ Map error:', error);
+                showNotification('⚠️ Map loading issue - reports still work!');
+            }
+        }
+        
+        function updateMapMarkers(reports) {
+            if (!mainMap) return;
+            
+            // Clear existing markers
+            mainMapMarkers.forEach(marker => marker.setMap(null));
+            mainMapMarkers = [];
+            
+            // Add markers for filtered reports
+            reports.forEach(report => {
+                if (report.coordinates || (report.lat && report.lng)) {
+                    const coords = report.coordinates || { lat: report.lat, lng: report.lng };
+                    const statusColors = {
+                        pending: '#f59e0b',
+                        progress: '#3b82f6',
+                        resolved: '#10b981'
+                    };
+                    
+                    const marker = new google.maps.Marker({
+                        position: { lat: coords.lat, lng: coords.lng },
+                        map: mainMap,
+                        title: report.title,
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            fillColor: statusColors[report.status] || '#6b7280',
+                            fillOpacity: 0.8,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 2,
+                            scale: 8
+                        }
+                    });
+                    
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div style="min-width: 180px; text-align: center;">
+                                <h4 style="margin: 0 0 8px 0; color: #1f2937;">📍 Report Location</h4>
+                                <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 14px;">${report.location}</p>
+                                <button onclick="showReportModal(${JSON.stringify(report).replace(/"/g, '&quot;')})" style="width: 100%; padding: 8px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">View Details</button>
+                            </div>
+                        `
+                    });
+                    
+                    marker.addListener('click', () => {
+                        infoWindow.open(mainMap, marker);
+                        highlightReportInList(report.id);
+                    });
+                    
+                    // Store marker reference with report ID for easy access
+                    marker.reportId = report.id;
+                    mainMapMarkers.push(marker);
+                }
+            });
+        }
+        
+        function updateMainMapMarkers() {
+            console.log('🔄 Updating main map markers...');
+            if (mainMap && allReports && allReports.length > 0) {
+                updateMapMarkers(allReports);
+                console.log(`✅ Updated map with ${allReports.length} reports`);
+            } else {
+                console.log('⚠️ Map or reports not ready yet');
+            }
+        }
+        
+        function selectReportFromMap(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (report) {
+                highlightReportInList(reportId);
+                showReportModal(report);
+            }
+        }
+
+        function updateMap(coordinates) {
+            // Create a new map for report details
+            window.detailMap = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: coordinates.lat, lng: coordinates.lng },
+                zoom: 14,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
+
+            const marker = new google.maps.Marker({
+                position: { lat: coordinates.lat, lng: coordinates.lng },
+                map: window.detailMap,
+                title: 'Report Location'
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<b>Location</b><br>Lat: ${coordinates.lat.toFixed(6)}<br>Lng: ${coordinates.lng.toFixed(6)}`
+            });
+
+            marker.addListener('click', () => {
+                infoWindow.open(window.detailMap, marker);
+            });
+        }
+
+        // ...existing code...
+        // Utility functions
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notificationText');
+            text.textContent = message;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize map fallback
+        window.initGoogleMaps = initGoogleMaps;
+        
+        // Fallback map initialization if callback doesn't work
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if Google Maps loaded after 3 seconds
+            setTimeout(() => {
+                if (typeof google !== 'undefined' && google.maps && !mainMap) {
+                    console.log('🔄 Fallback: Initializing map manually');
+                    initMainMap();
+                }
+            }, 3000);
+        });
+        
+
+        
+        // Initialize maps on dashboard load - Google Maps will auto-initialize via callback
+        // Ensure map integration works after filtering updates
+        function ensureMapIntegration() {
+            if (mainMap && filteredReports) {
+                updateMapMarkers(filteredReports);
+            }
+        }
+        
+        // Enhanced real-time sync function
+        function testSync() {
+            const testBtn = event.target;
+            testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+            testBtn.disabled = true;
+            
+            try {
+                if (window.realtimeSync && window.realtimeSync.db) {
+                    // Test Firebase sync
+                    window.realtimeSync.db.collection('reports').get().then((snapshot) => {
+                        const reports = [];
+                        snapshot.forEach((doc) => {
+                            reports.push({ id: doc.id, ...doc.data() });
+                        });
+                        
+                        if (reports.length > 0) {
+                            allReports = reports;
+                            applyFilters();
+                            updateStats();
+
+                            showNotification(`🔄 Synced ${reports.length} reports from Firebase`);
+                        } else {
+                            showNotification('📱 No reports found - Submit from mobile app first');
+                        }
+                    }).catch((error) => {
+                        console.error('Firebase sync error:', error);
+                        showNotification('❌ Firebase sync failed - Check configuration');
+                    }).finally(() => {
+                        testBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Test Sync';
+                        testBtn.disabled = false;
+                    });
+                } else {
+                    // Test localStorage sync
+                    loadReportsFromStorage();
+                    const reportCount = allReports.length;
+                    showNotification(`🔄 Local sync complete - ${reportCount} reports loaded`);
+                    
+                    // Simulate real-time update
+                    setTimeout(() => {
+                        const demoReport = {
+                            id: 'demo_' + Date.now(),
+                            title: 'Real-time Sync Test',
+                            description: 'This is a test report to demonstrate real-time synchronization.',
+                            category: 'infrastructure',
+                            priority: 'medium',
+                            status: 'pending',
+                            location: 'Test Location, City',
+                            coordinates: { lat: 20.5937, lng: 78.9629 },
+                            user: { name: 'Test User', email: 'test@example.com' },
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        const reports = JSON.parse(localStorage.getItem('civicReports') || '[]');
+                        reports.push(demoReport);
+                        localStorage.setItem('civicReports', JSON.stringify(reports));
+                        
+                        // Trigger update
+                        window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'civicReports',
+                            newValue: JSON.stringify(reports)
+                        }));
+                        
+                        showNotification('📱 Demo report added - Real-time sync working!');
+                    }, 1000);
+                    
+                    testBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Test Sync';
+                    testBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Sync test error:', error);
+                showNotification('❌ Sync test failed');
+                testBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Test Sync';
+                testBtn.disabled = false;
+            }
+        }
+        
+        // Group reports by city/location
+        function groupReportsByLocation() {
+            const locationCounts = {};
+            
+            allReports.forEach(report => {
+                const city = report.location.split(',')[0].trim();
+                locationCounts[city] = (locationCounts[city] || 0) + 1;
+            });
+            
+            return locationCounts;
+        }
+        
+        // Filter reports by city when marker is clicked
+        function filterReportsByCity(city) {
+            document.getElementById('searchInput').value = city;
+            applyFilters();
+            showNotification(`Filtered reports for ${city}`);
+        }
+
+        // Highlight report in list and scroll to it
+        function highlightReportInList(reportId) {
+            // Remove previous highlights
+            document.querySelectorAll('.report-item').forEach(item => {
+                item.classList.remove('highlighted');
+            });
+            
+            // Find and highlight the report
+            const reportElement = document.querySelector(`[onclick="selectReport('${reportId}')"]`);
+            if (reportElement) {
+                reportElement.classList.add('highlighted');
+                reportElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Remove highlight after animation
+                setTimeout(() => {
+                    reportElement.classList.remove('highlighted');
+                }, 2000);
+            }
+        }
+
+        // Show detailed report modal
+        function showReportModal(report) {
+            document.getElementById('modalReportTitle').textContent = report.title;
+            document.getElementById('modalReportDescription').textContent = report.description || report.summary || '';
+            document.getElementById('modalReportCategory').innerHTML = `<span class="report-category category-${report.category}">${report.category}</span>`;
+            document.getElementById('modalReportStatus').innerHTML = `<span class="status-badge status-${report.status}">${report.status}</span>`;
+            
+            // Add location with Google Maps link
+            const coords = report.coordinates || { lat: 20.5937, lng: 78.9629 };
+            const googleMapsUrl = `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
+            document.getElementById('modalReportLocation').innerHTML = `
+                ${report.location}<br>
+                <a href="${googleMapsUrl}" target="_blank" style="color: #3b82f6; text-decoration: none; font-size: 14px; margin-top: 5px; display: inline-block;">
+                    <i class="fas fa-external-link-alt"></i> View in Google Maps
+                </a>
+            `;
+            
+            document.getElementById('modalReportDate').textContent = new Date(report.timestamp || report.createdAt).toLocaleString();
+            
+            // Handle photos if available
+            if (report.photos && report.photos.length > 0) {
+                const photosContainer = document.getElementById('modalPhotos');
+                photosContainer.innerHTML = report.photos.map(photo => 
+                    `<img src="${photo}" alt="Report photo" class="modal-photo" onclick="window.open('${photo}', '_blank')"`
+                ).join('');
+                document.getElementById('modalPhotosSection').style.display = 'block';
+            } else {
+                document.getElementById('modalPhotosSection').style.display = 'none';
+            }
+            
+            // Add department assignment section to modal
+            const modalBody = document.querySelector('.modal-body');
+            const existingAssignment = modalBody.querySelector('.assignment-section');
+            if (existingAssignment) {
+                existingAssignment.remove();
+            }
+            
+            const assignmentSection = document.createElement('div');
+            assignmentSection.className = 'assignment-section';
+            assignmentSection.innerHTML = `
+                <div class="modal-section">
+                    <label class="modal-label"><i class="fas fa-user-cog"></i> Department Assignment</label>
+                    <select class="filter-select" id="assignDepartment" style="margin-bottom: 10px;">
+                        <option value="">Select Department</option>
+                        <option value="public-works">Public Works Department</option>
+                        <option value="environment">Environment Department</option>
+                        <option value="safety">Public Safety Department</option>
+                        <option value="transport">Transport Department</option>
+                    </select>
+                    <button class="action-btn" onclick="assignToDepartment('${report.id}')" style="width: 100%; background: #10b981; color: white; padding: 10px; border: none; border-radius: 6px; font-weight: 600;">
+                        <i class="fas fa-paper-plane"></i> Assign to Department
+                    </button>
+                </div>
+            `;
+            modalBody.appendChild(assignmentSection);
+            
+            document.getElementById('reportModal').style.display = 'flex';
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        // Close modal on outside click
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'reportModal') {
+                closeModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Select report and show details with map
+        function selectReportAndShowDetails(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) return;
+            
+            // Update selected state in report list
+            document.querySelectorAll('.report-item').forEach(item => item.classList.remove('selected'));
+            const reportElement = event.target.closest('.report-item');
+            if (reportElement) {
+                reportElement.classList.add('selected');
+            }
+            
+            // Pan map to report location
+            const marker = mainMapMarkers.find(m => m.reportId === reportId);
+            if (marker && mainMap) {
+                mainMap.panTo(marker.getPosition());
+                mainMap.setZoom(16);
+                
+                // Highlight the marker
+                google.maps.event.trigger(marker, 'click');
+            }
+            
+            // Show detailed modal with report information
+            showReportModal(report);
+            
+            // Show notification
+            showNotification(`📍 Viewing details for: ${report.title}`);
+        }
+        
+        // Legacy function for backward compatibility
+        function selectReportAndPanMap(reportId) {
+            selectReportAndShowDetails(reportId);
+        }
+
+        // Show loading spinner
+        function showLoadingSpinner() {
+            const container = document.getElementById('reportsContainer');
+            container.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <span>Loading reports...</span>
+                </div>
+            `;
+            
+            // Show map loading
+            const mapSection = document.querySelector('.map-section');
+            if (mapSection && !mapSection.querySelector('.loading-spinner')) {
+                const mapSpinner = document.createElement('div');
+                mapSpinner.className = 'loading-spinner';
+                mapSpinner.style.position = 'absolute';
+                mapSpinner.style.top = '0';
+                mapSpinner.style.left = '0';
+                mapSpinner.style.right = '0';
+                mapSpinner.style.bottom = '0';
+                mapSpinner.style.background = 'rgba(255, 255, 255, 0.9)';
+                mapSpinner.style.zIndex = '1000';
+                mapSpinner.innerHTML = '<div class="spinner"></div><span>Loading map...</span>';
+                mapSection.appendChild(mapSpinner);
+            }
+        }
+
+        // Hide loading spinner
+        function hideLoadingSpinner() {
+            const mapSpinner = document.querySelector('.map-section .loading-spinner');
+            if (mapSpinner) {
+                mapSpinner.remove();
+            }
+        }
+
+        // Show error message
+        function showErrorMessage(message) {
+            const container = document.getElementById('reportsContainer');
+            container.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ${message}
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>
